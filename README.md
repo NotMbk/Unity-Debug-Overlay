@@ -7,7 +7,8 @@ A lightweight, easy-to-use visual debugging tool for Unity that displays real-ti
 
 ## ✨ Features
 
-- **Real-time FPS monitoring** - Automatic frame rate calculation and display
+- **Real-time FPS / Performance monitoring** - Automatic frame rate calculation and display
+- **Visibility toggle** - toggle the panel on and off for visibility
 - **Customizable debug values** - Add any key-value pairs you want to monitor
 - **Singleton pattern** - One instance across all scenes, survives scene transitions
 - **Highly configurable** - Adjust colors, font size, opacity, and update intervals via Inspector
@@ -21,8 +22,8 @@ A lightweight, easy-to-use visual debugging tool for Unity that displays real-ti
 
 1. Download `DebugOverlay.cs`
 2. Drop it into your Unity project's Scripts folder
-3. That's it! The debugger will automatically initialize when first accessed.
-(you can attach it to a game object to access values like color or change them in the script)
+3. That's it! The debugger will automatically initialize when first accessed.(you can attach it to a game object to access values like color or change them in the script)
+4. you can toggle the overlay with backtick or bind it to your liking.
 
 ### Basic Usage
 
@@ -49,6 +50,8 @@ Select the `DebugOverlay` GameObject in the hierarchy and adjust these settings 
 | **Text Color** | Color of the debug text | Green |
 | **Font Size** | Size of the debug text | 25 |
 | **Padding** | Offset from screen edge | (10, 10) |
+| **Resolution** | Screen size | (1920, 1080) |
+| **Panel Width** | Background panel width | 400 |
 
 ## 📖 API Reference
 
