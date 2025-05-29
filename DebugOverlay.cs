@@ -16,7 +16,6 @@ public class DebugOverlay : MonoBehaviour
     private Image backgroundPanel;
     private TextMeshProUGUI debugText;
 
-    
     private System.Text.StringBuilder stringBuilder = new(256);
     private readonly Dictionary<string, string> debugValues = new();
 
