@@ -2,20 +2,32 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using TMPro;
+using System;
+
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 public class DebugOverlay : MonoBehaviour
 {
+    
     [Header("Settings")]
     [SerializeField] private float updateInterval = 0.5f;
     [SerializeField][Range(0f, 1f)] private float backgroundOpacity = 0.2f;
     [SerializeField] private Color textColor = Color.green;
     [SerializeField] private int fontSize = 25;
-    [SerializeField] private Vector2 padding = new (10, 10);
+    [SerializeField] private Vector2 padding = new(10, 10);
+    [SerializeField] private Vector2 resolution = new(1920, 1080);
+    [SerializeField] private int panelWidth = 400;
+
+    [Header("Toggle Settings")]
+    [SerializeField] private bool isVisible = true;
+    [SerializeField] private bool showFPS = true;
+    [SerializeField] private bool showPerformance = true;
 
     private Canvas debugCanvas;
     private Image backgroundPanel;
     private TextMeshProUGUI debugText;
-
     private System.Text.StringBuilder stringBuilder = new(256);
     private readonly Dictionary<string, string> debugValues = new();
 
@@ -26,8 +38,22 @@ public class DebugOverlay : MonoBehaviour
     private int frameCount;
     private float fps;
 
+    // Performance tracking variables
+    private float performanceUpdateTimer;
+    private float frameTime;
+    private long memoryUsage;
+    private int gcCollectionCount;
+
+    // NEW INPUT SYSTEM
+#if ENABLE_INPUT_SYSTEM 
+    [SerializeField] private Key toggleKey = Key.Backquote;
+#else
+    [SerializeField] private KeyCode toggleKey = KeyCode.BackQuote; 
+#endif
+
     private static DebugOverlay _instance;
-    public static DebugOverlay Instance{
+    public static DebugOverlay Instance
+    {
         get
         {
             if (_instance == null)
@@ -38,7 +64,7 @@ public class DebugOverlay : MonoBehaviour
                 // If no instance exists, create one
                 if (_instance == null)
                 {
-                    GameObject debuggerObj = new ("VisualDebugger");
+                    GameObject debuggerObj = new("VisualDebugger");
                     _instance = debuggerObj.AddComponent<DebugOverlay>();
                     DontDestroyOnLoad(debuggerObj);
                 }
@@ -65,9 +91,8 @@ public class DebugOverlay : MonoBehaviour
     }
 
     private void InitializeUI()
-    {
-        // Canvas
-        GameObject canvasObj = new("DebugCanvas");
+    {   
+        GameObject canvasObj = new("DebugCanvas"); // Canvas
         canvasObj.transform.SetParent(transform);
 
         debugCanvas = canvasObj.AddComponent<Canvas>();
@@ -76,10 +101,9 @@ public class DebugOverlay : MonoBehaviour
 
         CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
+        scaler.referenceResolution = resolution;
 
-        // Background panel
-        GameObject panelObj = new("DebugPanel");
+        GameObject panelObj = new("DebugPanel"); // Background panel
         panelObj.transform.SetParent(canvasObj.transform, false);
 
         backgroundPanel = panelObj.AddComponent<Image>();
@@ -92,8 +116,7 @@ public class DebugOverlay : MonoBehaviour
         panelRect.anchoredPosition = new(padding.x, -padding.y);
         panelRect.sizeDelta = new(400, 200);
 
-        // Debug text
-        GameObject textObj = new("DebugText");
+        GameObject textObj = new("DebugText"); // Debug text
         textObj.transform.SetParent(panelObj.transform, false);
 
         debugText = textObj.AddComponent<TextMeshProUGUI>();
@@ -107,15 +130,46 @@ public class DebugOverlay : MonoBehaviour
         textRect.anchorMax = Vector2.one;
         textRect.pivot = new(0.5f, 0.5f);
         textRect.anchoredPosition = Vector2.zero;
-        textRect.sizeDelta = new(-15, -15); 
-        
-        SetDebugValue("FPS", "0");
+        textRect.sizeDelta = new(-15, -15);
+
+        if (showFPS)
+            SetDebugValue("FPS", "0");
+            
+        if(showPerformance)
+        {
+            SetDebugValue("Frame Time", "0.0ms");
+            SetDebugValue("Memory", "0MB");
+            SetDebugValue("GC Collections", "0");
+        }
     }
 
     private void Update()
     {
-        CalculateAndUpdateFPS();
+#if ENABLE_INPUT_SYSTEM
+        if (Keyboard.current != null && Keyboard.current[toggleKey].wasPressedThisFrame)
+            ToggleVisibility();
+#else
+        if (Input.GetKeyDown(toggleKey))
+        {
+            ToggleVisibility();
+        }
+#endif
+
+        if(showFPS)
+            CalculateAndUpdateFPS();
+            
+        if(showPerformance)
+            CalculateAndUpdatePerformance();
+            
         UpdateDebugDisplay();
+    }
+
+    private void ToggleVisibility()
+    {
+        isVisible = !isVisible;
+
+        if (debugCanvas != null)
+            debugCanvas.gameObject.SetActive(isVisible); 
     }
 
     private void CalculateAndUpdateFPS()
@@ -133,14 +187,32 @@ public class DebugOverlay : MonoBehaviour
         }
     }
 
+    private void CalculateAndUpdatePerformance()
+    {
+        performanceUpdateTimer += Time.unscaledDeltaTime;
+        frameTime = Time.unscaledDeltaTime * 1000f;
+
+        if (performanceUpdateTimer >= updateInterval)
+        {
+            memoryUsage = GC.GetTotalMemory(false) / 1024 / 1024;
+            
+            gcCollectionCount = GC.CollectionCount(0) + GC.CollectionCount(1) + GC.CollectionCount(2);
+            performanceUpdateTimer = 0;
+
+            SetDebugValue("Frame Time", frameTime.ToString("F1") + "ms");
+            SetDebugValue("Memory", memoryUsage.ToString() + "MB");
+            SetDebugValue("GC Collections", gcCollectionCount.ToString());
+        }
+    }
+
     private void UpdateDebugDisplay()
     {
         if (debugText == null) return;
 
-       stringBuilder.Clear();
-
+        stringBuilder.Clear();        
+    
         foreach (KeyValuePair<string, string> pair in debugValues)
-        {
+        {         
             stringBuilder.AppendLine($"{pair.Key}: {pair.Value}");
         }
 
@@ -148,8 +220,7 @@ public class DebugOverlay : MonoBehaviour
 
         RectTransform panelRect = backgroundPanel.GetComponent<RectTransform>();
         float height = Mathf.Min(debugText.preferredHeight + 20, Screen.height * 0.7f);
-        panelRect.sizeDelta = new (400, height);
-        
+        panelRect.sizeDelta = new(panelWidth, height);
     }
 
     public static void SetDebugValue(string key, object value)
