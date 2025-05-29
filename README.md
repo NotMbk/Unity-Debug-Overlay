@@ -19,16 +19,15 @@ A lightweight, easy-to-use visual debugging tool for Unity that displays real-ti
 
 ### Installation
 
-1. Download `RuntimeDebugDisplay.cs`
+1. Download `DebugOverlay.cs`
 2. Drop it into your Unity project's Scripts folder
 3. That's it! The debugger will automatically initialize when first accessed.
+(you can attach it to a game object to access values like color or change them in the script)
 
 ### Basic Usage
 
 ```csharp
 // Display any value (automatically shows FPS)
-RuntimeDebugDisplay.SetDebugValue("Player Health", 100);
-RuntimeDebugDisplay.SetDebugValue("Score", 1250);
 RuntimeDebugDisplay.SetDebugValue("Current Level", "Forest Temple");
 
 // Update values in real-time
@@ -41,7 +40,7 @@ void Update()
 
 ### Configuration
 
-Select the `RuntimeDebugDisplay` GameObject in the hierarchy and adjust these settings in the Inspector:
+Select the `DebugOverlay` GameObject in the hierarchy and adjust these settings in the Inspector:
 
 | Setting | Description | Default |
 |---------|-------------|---------|
@@ -57,27 +56,6 @@ Select the `RuntimeDebugDisplay` GameObject in the hierarchy and adjust these se
 
 #### `SetDebugValue(string key, object value)`
 Adds or updates a debug value to display.
-
-```csharp
-// Examples
-RuntimeDebugDisplay.SetDebugValue("Health", playerHealth);
-RuntimeDebugDisplay.SetDebugValue("State", currentState.ToString());
-RuntimeDebugDisplay.SetDebugValue("Items", inventory.Count);
-RuntimeDebugDisplay.SetDebugValue("Timer", gameTimer.ToString("F1"));
-```
-
-**Parameters:**
-- `key` - The label to display (e.g., "Health", "Score")
-- `value` - Any object to display (automatically converted to string)
-
-### Properties
-
-#### `Instance`
-Access the singleton instance (automatically created if needed).
-
-```csharp
-var debugger = RuntimeDebugDisplay.Instance;
-```
 
 ## 🎮 Usage Examples
 
@@ -95,76 +73,9 @@ public class PlayerStats : MonoBehaviour
 }
 ```
 
-### Game State Debugging
-```csharp
-public class GameManager : MonoBehaviour
-{
-    void Update()
-    {
-        RuntimeDebugDisplay.SetDebugValue("Game State", currentGameState);
-        RuntimeDebugDisplay.SetDebugValue("Active Enemies", enemies.Count);
-        RuntimeDebugDisplay.SetDebugValue("Wave", currentWave);
-        RuntimeDebugDisplay.SetDebugValue("Time Left", timeRemaining.ToString("F1"));
-    }
-}
-```
-
-### Performance Monitoring
-```csharp
-public class PerformanceMonitor : MonoBehaviour
-{
-    void Update()
-    {
-        RuntimeDebugDisplay.SetDebugValue("Memory", $"{GC.GetTotalMemory(false) / 1024 / 1024}MB");
-        RuntimeDebugDisplay.SetDebugValue("Draw Calls", UnityEngine.Rendering.FrameDebugger.enabled ? "N/A" : "Check Profiler");
-        RuntimeDebugDisplay.SetDebugValue("Time Scale", Time.timeScale);
-    }
-}
-```
-
-## ⚙️ Technical Details
-
-- **UI System**: Uses Unity's Canvas system with Screen Space Overlay
-- **Rendering Order**: Set to 1000 to display on top of all game UI
-- **Memory Efficient**: Reuses UI elements and minimizes allocations
-- **Thread Safe**: Safe to call from any thread
-- **Scene Persistent**: Survives scene transitions using `DontDestroyOnLoad`
-
-## 🔧 Customization Tips
-
-### Change Position
-Modify the `InitializeUI()` method to change panel position:
-
-```csharp
-// Top-right corner
-panelRect.anchorMin = new(1, 1);
-panelRect.anchorMax = new(1, 1);
-panelRect.pivot = new(1, 1);
-panelRect.anchoredPosition = new(-padding.x, -padding.y);
-```
-
-### Add Toggle Functionality
-```csharp
-// Add this method to toggle visibility
-public void ToggleVisibility()
-{
-    debugCanvas.gameObject.SetActive(!debugCanvas.gameObject.activeSelf);
-}
-
-// Call with a key press
-if (Input.GetKeyDown(KeyCode.F1))
-{
-    RuntimeDebugDisplay.Instance.ToggleVisibility();
-}
-```
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
